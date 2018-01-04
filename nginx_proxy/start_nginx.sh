@@ -69,25 +69,6 @@ while getopts 'ha:n:N:p:S:s:v:r:' arg; do
   esac
 done
 
-if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}"  && \
-      "${ENDPOINTS_ROLLOUT_STRATEGY}" != "fixed" && \
-      "${ENDPOINTS_ROLLOUT_STRATEGY}" != "managed" ]]; then
-  echo "Error: rollout strategy option should be either fixed or managed"
-  usage
-fi
-
-if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" != "managed" && \
-      "${ENDPOINTS_SERVICE_VERSION}" == "" ]]; then
-  echo "Error: version must be specified for fixed rollout strategy"
-  usage
-fi
-
-if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" == "managed" && \
-      "${ENDPOINTS_SERVICE_VERSION}" ]]; then
-  echo "Error: version should not be specified for managed rollout strategy"
-  usage
-fi
-
 mkdir -p ${CERT_DIR}
 if [[ ! -f "${KEY_FILE}" ]]; then
   rm -f ${CSR_FILE} ${CRT_FILE}
@@ -112,16 +93,42 @@ if [[ -f "${CONF_FILE}" ]]; then
   cp "${CONF_FILE}" /etc/nginx/nginx.conf
 fi
 
-# Building nginx startup command
-cmd="/usr/sbin/start_esp"
-cmd+=" -n /etc/nginx/nginx.conf"
-cmd+=" -s \"${ENDPOINTS_SERVICE_NAME}\""
-if [[ "${ENDPOINTS_SERVICE_VERSION}" ]]; then
-  cmd+=" -v \"${ENDPOINTS_SERVICE_VERSION}\""
-fi
-if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" ]]; then
-  cmd+=" --rollout_strategy \"${ENDPOINTS_ROLLOUT_STRATEGY}\""
-fi
-
 # Start nginx
-eval $cmd
+if [[ -z "${ENDPOINTS_SERVICE_NAME}" && \
+      -z "${ENDPOINTS_ROLLOUT_STRATEGY}" && \
+      -z "${ENDPOINTS_SERVICE_VERSION}" ]]; then
+  /usr/sbin/nginx -p /usr -c /etc/nginx/nginx.conf
+else
+  if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}"  && \
+        "${ENDPOINTS_ROLLOUT_STRATEGY}" != "fixed" && \
+        "${ENDPOINTS_ROLLOUT_STRATEGY}" != "managed" ]]; then
+    echo "Error: rollout strategy option should be either fixed or managed"
+    usage
+  fi
+
+  if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" != "managed" && \
+        "${ENDPOINTS_SERVICE_VERSION}" == "" ]]; then
+    echo "Error: version must be specified for fixed rollout strategy"
+    usage
+  fi
+
+  if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" == "managed" && \
+        "${ENDPOINTS_SERVICE_VERSION}" ]]; then
+    echo "Error: version should not be specified for managed rollout strategy"
+    usage
+  fi
+
+  # Building nginx startup command
+  cmd="/usr/sbin/start_esp"
+  cmd+=" -n /etc/nginx/nginx.conf"
+  cmd+=" -s \"${ENDPOINTS_SERVICE_NAME}\""
+  if [[ "${ENDPOINTS_SERVICE_VERSION}" ]]; then
+    cmd+=" -v \"${ENDPOINTS_SERVICE_VERSION}\""
+  fi
+  if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" ]]; then
+    cmd+=" --rollout_strategy \"${ENDPOINTS_ROLLOUT_STRATEGY}\""
+  fi
+
+  # Start nginx
+  eval $cmd
+fi
