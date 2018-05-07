@@ -148,6 +148,5 @@ fi
 cmd+=" --client_ip_header \"X-Forwarded-For\""
 cmd+=" --client_ip_position -2"
 
-echo $cmd
 # Start nginx
-#eval $cmd || exit $?
+eval $cmd || exit $?
