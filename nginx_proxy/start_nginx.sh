@@ -143,7 +143,7 @@ if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" ]]; then
   cmd+=" --rollout_strategy \"${ENDPOINTS_ROLLOUT_STRATEGY}\""
 fi
 if [[ "${ENDPOINTS_CLOUD_TRACE_FLAG}" == 'false' ]]; then
-  cmd+=" --disable_cloud_trace"
+  cmd+=" --disable_cloud_trace_sampling"
 fi
 cmd+=" --client_ip_header \"X-Forwarded-For\""
 cmd+=" --client_ip_position -2"
